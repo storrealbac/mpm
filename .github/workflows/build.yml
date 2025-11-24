@@ -133,7 +133,7 @@ jobs:
     - name: Generate version number
       run: |
         # Generate version from timestamp and commit hash
-        VERSION="nightly-$(date +'%Y%m%d')-$(git rev-parse --short HEAD)"
+        VERSION="build-$(date +'%Y%m%d')-$(git rev-parse --short HEAD)"
         echo "VERSION=$VERSION" >> $GITHUB_ENV
         echo "Generated version: $VERSION"
 
