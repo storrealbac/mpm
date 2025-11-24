@@ -17,7 +17,8 @@ Expand-Archive -Path "$HOME\mpm\mpm.zip" -DestinationPath "$HOME\mpm" -Force
 # Add to PATH
 $path = [Environment]::GetEnvironmentVariable("PATH", "User")
 if ($path -notlike "*$HOME\mpm*") {
-    [Environment]::SetEnvironmentVariable("PATH", $path + ";$HOME\mpm", "User")
+    $newPath = if ($path) { "$path;$HOME\mpm" } else { "$HOME\mpm" }
+    [Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
 }
 
 # Cleanup
