@@ -8,7 +8,12 @@ New-Item -ItemType Directory -Force -Path "$HOME\mpm" | Out-Null
 
 # Download
 Write-Host "Downloading mpm..." -ForegroundColor Yellow
-Invoke-WebRequest -Uri "https://github.com/storrealbac/mpm/releases/latest/download/mpm-windows-latest-amd64.zip" -OutFile "$HOME\mpm\mpm.zip"
+try {
+    Invoke-WebRequest -Uri "https://github.com/storrealbac/mpm/releases/latest/download/mpm-windows-latest-amd64.zip" -OutFile "$HOME\mpm\mpm.zip"
+} catch {
+    Write-Host "Failed to download. Please check your internet connection." -ForegroundColor Red
+    exit 1
+}
 
 # Extract
 Write-Host "Installing..." -ForegroundColor Yellow
