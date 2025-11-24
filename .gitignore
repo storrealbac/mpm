@@ -39,7 +39,7 @@ Thumbs.db
 *~
 
 # Module files
-go.sum
+# go.sum - Commented out, should be versioned
 
 # Node.js (if you have any build tools that use it)
 node_modules/
