@@ -11,6 +11,20 @@ A CLI tool to manage Minecraft server plugins and mods using the Modrinth API. I
 
 ## Installation
 
+### Install
+
+#### Windows
+```powershell
+powershell -c "irm https://raw.githubusercontent.com/storrealbac/mpm/main/scripts/install.ps1 | iex"
+```
+
+#### Linux / macOS
+```bash
+curl -fsSL https://raw.githubusercontent.com/storrealbac/mpm/main/scripts/install.sh | bash
+```
+
+That's it! mpm will be installed and ready to use.
+
 ### From Source
 
 ```bash
