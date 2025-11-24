@@ -1,0 +1,93 @@
+# Go specific
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+go.work.sum
+
+# Go build artifacts
+mpm
+*.exe
+!mpm.go
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Module files
+go.sum
+
+# Node.js (if you have any build tools that use it)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Minecraft server files
+server.jar
+server.properties
+eula.txt
+logs/
+crash-reports/
+plugins/
+world/
+world_nether/
+world_the_end/
+config/
+
+# Cache directories
+.cache/
+*.cache
+cache/
+
+# Build and distribution folders
+dist/
+build/
+bin/
+target/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Package lock files
+package-lock.yml
+package-lock.json
+yarn.lock
+
+# Local development files
+*.local
+local.*
+
+# Claude specific
+.claude/settings.local.json
+
+# Backup files
+*.bak
+*.backup
+*.old
