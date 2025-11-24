@@ -12,7 +12,12 @@ Invoke-WebRequest -Uri "https://github.com/storrealbac/mpm/releases/latest/downl
 
 # Extract
 Write-Host "Installing..." -ForegroundColor Yellow
-Expand-Archive -Path "$HOME\mpm\mpm.zip" -DestinationPath "$HOME\mpm" -Force
+try {
+    Expand-Archive -Path "$HOME\mpm\mpm.zip" -DestinationPath "$HOME\mpm" -Force
+} catch {
+    Write-Host "Failed to extract archive." -ForegroundColor Red
+    exit 1
+}
 
 # Add to PATH
 $path = [Environment]::GetEnvironmentVariable("PATH", "User")
