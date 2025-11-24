@@ -22,7 +22,7 @@ jobs:
             goarch: arm64
 
     env:
-      GO_VERSION: '1.23'
+      GO_VERSION: '1.23.4'
 
     steps:
     - name: Checkout code
@@ -39,12 +39,14 @@ jobs:
         path: |
           ~/.cache/go-build
           ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum', '**/go.mod') }}
         restore-keys: |
           ${{ runner.os }}-go-
 
     - name: Download dependencies
-      run: go mod download
+      run: |
+        go mod download
+        go mod verify
 
     - name: Build binary
       shell: bash
