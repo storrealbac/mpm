@@ -118,11 +118,25 @@ func installSpecificPlugins(client *modrinth.Client, plugins []string, serverVer
 		return fmt.Errorf("error loading package-lock.yml: %w", err)
 	}
 
+	serverType := strings.ToLower(pkg.Server.Type)
+
 	for _, query := range plugins {
-		ui.PrintInfo("Searching '%s' on Modrinth...", query)
-		projects, err := client.SearchProjects(query)
+		ui.PrintInfo("Searching '%s' on Modrinth for %s server...", query, pkg.Server.Type)
+
+		// Try strict search first (exact platform match)
+		projects, err := client.SearchProjects(query, serverType, true)
 		if err != nil {
 			return fmt.Errorf("error searching %s: %w", query, err)
+		}
+
+		// If no strict results and server type is set, try broader search
+		if len(projects) == 0 && serverType != "" {
+			ui.PrintWarning("No %s-specific plugins found for '%s'", pkg.Server.Type, query)
+			ui.PrintInfo("Searching for compatible alternatives...")
+			projects, err = client.SearchProjects(query, serverType, false)
+			if err != nil {
+				return fmt.Errorf("error searching %s: %w", query, err)
+			}
 		}
 
 		if len(projects) == 0 {
@@ -168,6 +182,36 @@ func installSpecificPlugins(client *modrinth.Client, plugins []string, serverVer
 			}
 		}
 		ui.PrintSuccess("Found: %s (%s)", project.Title, project.Slug)
+
+		// Check plugin compatibility with server type
+		if serverType != "" {
+			compatible, exactMatch := modrinth.IsPluginCompatible(project, serverType)
+
+			if !compatible {
+				ui.PrintWarning("WARNING: '%s' is NOT compatible with %s server!", project.Title, pkg.Server.Type)
+				ui.PrintError("This plugin will likely not work. Installation cancelled.")
+				continue
+			}
+
+			if !exactMatch {
+				ui.PrintWarning("WARNING: '%s' is not specifically designed for %s!", project.Title, pkg.Server.Type)
+				fmt.Printf("Plugin categories: %v\n", project.Categories)
+
+				if serverType == "folia" {
+					ui.PrintWarning("Folia has significant threading changes. Paper/Spigot plugins may crash or corrupt data!")
+				}
+
+				fmt.Print("\nThis plugin may not work correctly. Do you want to continue? (y/N): ")
+				reader := bufio.NewReader(os.Stdin)
+				response, _ := reader.ReadString('\n')
+				response = strings.TrimSpace(strings.ToLower(response))
+
+				if response != "y" && response != "yes" {
+					ui.PrintInfo("Installation cancelled.")
+					continue
+				}
+			}
+		}
 
 		// Get versions
 		// Try to filter by server version if exists
