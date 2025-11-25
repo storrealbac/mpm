@@ -7,16 +7,19 @@ import (
 )
 
 type Package struct {
-	Name    string       `yaml:"name"`
-	Version string       `yaml:"version"`
-	Server  ServerConfig `yaml:"server,omitempty"`
-	Plugins []Plugin     `yaml:"plugins"`
+	Name            string            `yaml:"name"`
+	Version         string            `yaml:"version"`
+	Server          ServerConfig      `yaml:"server,omitempty"`
+	Plugins         []Plugin          `yaml:"plugins"`
+	Scripts         map[string]string `yaml:"scripts,omitempty"`
+	StartupCommands []string          `yaml:"startup_commands,omitempty"`
 }
 
 type ServerConfig struct {
-	Type             string `yaml:"type"`              // paper, purpur, folia, spigot, bukkit, sponge, velocity, waterfall
-	MinecraftVersion string `yaml:"minecraft_version"` // 1.20.1, etc.
-	Build            string `yaml:"build,omitempty"`   // latest or specific build number
+	Type             string `yaml:"type"`                        // paper, purpur, folia, spigot, bukkit, sponge, velocity, waterfall
+	MinecraftVersion string `yaml:"minecraft_version"`           // 1.20.1, etc.
+	Build            string `yaml:"build,omitempty"`             // latest or specific build number
+	StartCommand     string `yaml:"start_command,omitempty"`     // custom server start command
 }
 
 type Plugin struct {
