@@ -68,19 +68,15 @@ func runInit(cmd *cobra.Command, args []string) error {
 			Type:             "paper",
 			MinecraftVersion: "1.20.4",
 			Build:            "latest",
+			StartCommand:     "java -Xms3G -Xmx4G -jar server.jar nogui",
 		},
-		Plugins: []models.Plugin{
-			{
-				Name:       "Fabric API",
-				Version:    "latest",
-				ModrinthID: "fabric-api",
-			},
-			{
-				Name:       "Sodium",
-				Version:    "latest",
-				ModrinthID: "sodium",
-			},
+		Scripts: map[string]string{
+			"clean": "rm -rf logs/*.log",
 		},
+		StartupCommands: []string{
+			"say Server started successfully!",
+		},
+		Plugins: []models.Plugin{},
 	}
 
 	// Interactive mode
@@ -117,7 +113,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 			pkg.Server.MinecraftVersion = mcVer
 		}
 
-		ui.PrintInfo("Some example mods will be created. You can edit them later in package.yml")
+		ui.PrintInfo("A default configuration has been created. You can edit it later in package.yml")
 	}
 
 	err := pkg.SaveToFile(filename)
@@ -126,7 +122,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 
 	ui.PrintSuccess("File %s created successfully!", filename)
-	ui.PrintInfo("Edit it to add your mods and then run 'mpm install'")
+	ui.PrintInfo("Edit it to add your plugins and then run 'mpm install'")
 
 	return nil
 }
