@@ -22,14 +22,15 @@ type ServerConfig struct {
 type Plugin struct {
 	Name         string   `yaml:"name"`
 	Version      string   `yaml:"version"`     // Version específica requerida
-	ModrinthID   string   `yaml:"modrinth_id"` // ID o Slug de Modrinth
+	ModrinthID   string   `yaml:"modrinth_id,omitempty"` // ID o Slug de Modrinth
+	HangarID     string   `yaml:"hangar_id,omitempty"`   // owner/slug for Hangar (e.g., "PaperMC/Geyser")
 	Optional     bool     `yaml:"optional,omitempty"`
 	Dependencies []string `yaml:"dependencies,omitempty"`
 }
 
 // PackageLock stores checksums and resolved versions
 type PackageLock struct {
-	Plugins map[string]PluginLock `yaml:"plugins"` // Key is ModrinthID
+	Plugins map[string]PluginLock `yaml:"plugins"` // Key is ModrinthID or HangarID
 }
 
 type PluginLock struct {

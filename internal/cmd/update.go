@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/storrealbac/mpm/internal/models"
-	"github.com/storrealbac/mpm/internal/modrinth"
+	"github.com/storrealbac/mpm/internal/sources"
 	"github.com/storrealbac/mpm/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -51,7 +51,7 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("error loading package-lock.yml: %w", err)
 	}
 
-	client := modrinth.NewClient()
+	client := sources.NewModrinthClient()
 	updatesFound := false
 
 	ui.PrintHeader("Checking for updates...")
@@ -88,7 +88,7 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 
 			if !checkOnly {
 				// Download new version
-				var fileToDownload *modrinth.File
+				var fileToDownload *sources.ModrinthFile
 				for _, f := range latest.Files {
 					if f.Primary {
 						fileToDownload = &f
