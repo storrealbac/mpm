@@ -29,7 +29,9 @@ fi
 # Add to PATH
 if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
   echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc 2>/dev/null || true
+  if [ -f ~/.zshrc ]; then
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+  fi
 fi
 
 echo "mpm installed to ~/.local/bin"
