@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mpm - Minecraft Plugin Manager</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #ff6600;
+            color: #fff;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        h1 {
+            color: #fff;
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            color: #fff;
+            margin-top: 30px;
+            margin-bottom: 10px;
+        }
+
+        .code-container {
+            position: relative;
+            margin: 10px 0;
+        }
+
+        pre {
+            background: #000;
+            color: #fff;
+            padding: 15px;
+            overflow-x: auto;
+            border: 2px solid #fff;
+            margin: 0;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #fff;
+            color: #000;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-family: monospace;
+        }
+
+        .copy-btn:hover {
+            background: #ccc;
+        }
+
+        a {
+            color: #fff;
+            text-decoration: underline;
+        }
+
+        .servers {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>mpm</h1>
+    <p>Minecraft Plugin Manager</p>
+
+    <h2>Install</h2>
+
+    <p><strong>Linux / macOS:</strong></p>
+    <div class="code-container">
+        <button class="copy-btn" onclick="copy(this, 'curl -fsSL https://storrealbac.github.io/mpm/install.sh | bash')">Copy</button>
+        <pre>curl -fsSL https://storrealbac.github.io/mpm/install.sh | bash</pre>
+    </div>
+
+    <p><strong>Windows:</strong></p>
+    <div class="code-container">
+        <button class="copy-btn" onclick="copy(this, 'powershell -c &quot;irm https://storrealbac.github.io/mpm/install.ps1 | iex&quot;')">Copy</button>
+        <pre>powershell -c "irm https://storrealbac.github.io/mpm/install.ps1 | iex"</pre>
+    </div>
+
+    <h2>Usage</h2>
+    <div class="code-container">
+        <button class="copy-btn" onclick="copy(this, 'mpm init                    # Initialize new server\nmpm install &lt;plugin&gt;        # Install plugin\nmpm update                  # Update all plugins\nmpm list                    # List installed plugins')">Copy</button>
+        <pre>mpm init                    # Initialize new server
+mpm install &lt;plugin&gt;        # Install plugin
+mpm update                  # Update all plugins
+mpm list                    # List installed plugins</pre>
+    </div>
+
+    <h2>Supported Servers</h2>
+    <p class="servers">Paper, Purpur, Folia, Spigot, Bukkit, Sponge, Velocity, Waterfall</p>
+
+    <p><a href="https://github.com/storrealbac/mpm">GitHub</a></p>
+
+    <script>
+        function copy(btn, text) {
+            navigator.clipboard.writeText(text).then(() => {
+                btn.textContent = 'Copied!';
+                setTimeout(() => {
+                    btn.textContent = 'Copy';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

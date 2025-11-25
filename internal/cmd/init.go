@@ -103,7 +103,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 			pkg.Version = version
 		}
 
-		fmt.Printf("%s", ui.InfoStyle.Render("Server Type (paper, purpur, velocity, waterfall) [paper]: "))
+		fmt.Printf("%s", ui.InfoStyle.Render("Server Type (paper, purpur, folia, spigot, bukkit, sponge, velocity, waterfall) [paper]: "))
 		srvType, _ := reader.ReadString('\n')
 		srvType = strings.TrimSpace(srvType)
 		if srvType != "" {

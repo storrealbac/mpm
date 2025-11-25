@@ -14,7 +14,7 @@ type Package struct {
 }
 
 type ServerConfig struct {
-	Type             string `yaml:"type"`              // paper, purpur, velocity, waterfall, spigot
+	Type             string `yaml:"type"`              // paper, purpur, folia, spigot, bukkit, sponge, velocity, waterfall
 	MinecraftVersion string `yaml:"minecraft_version"` // 1.20.1, etc.
 	Build            string `yaml:"build,omitempty"`   // latest or specific build number
 }
