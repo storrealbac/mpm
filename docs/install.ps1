@@ -9,7 +9,10 @@ New-Item -ItemType Directory -Force -Path "$HOME\mpm" | Out-Null
 # Remove old version if exists
 if (Test-Path "$HOME\mpm\mpm.exe") {
     Write-Host "Removing old version..." -ForegroundColor Yellow
-    Remove-Item "$HOME\mpm\mpm.exe" -Force
+    Remove-Item "$HOME\mpm\mpm.exe" -Force -ErrorAction SilentlyContinue
+}
+if (Test-Path "$HOME\mpm\mpm.cmd") {
+    Remove-Item "$HOME\mpm\mpm.cmd" -Force -ErrorAction SilentlyContinue
 }
 
 # Download
@@ -29,6 +32,13 @@ try {
     Write-Host "Failed to extract archive." -ForegroundColor Red
     exit 1
 }
+
+# Create batch wrapper for 'mpm' command (without .exe)
+$batchContent = @"
+@echo off
+"%~dp0mpm.exe" %*
+"@
+Set-Content -Path "$HOME\mpm\mpm.cmd" -Value $batchContent -Encoding ASCII
 
 # Add to PATH
 $path = [Environment]::GetEnvironmentVariable("PATH", "User")
