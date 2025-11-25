@@ -2,7 +2,7 @@
 set -e
 # mpm installer
 
-echo "mpm: Minecraft Plugin Manager Installer"
+echo -e "\033[0;33mmpm: Minecraft Plugin Manager Installer\033[0m"
 
 # Detect OS
 os=$(uname -s | tr '[:upper:]' '[:lower:]')

@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 # mpm installer
 
-Write-Host "mpm: Minecraft Plugin Manager Installer" -ForegroundColor Cyan
+Write-Host "mpm: Minecraft Plugin Manager Installer" -ForegroundColor DarkYellow
 
 # Create directory
 New-Item -ItemType Directory -Force -Path "$HOME\mpm" | Out-Null
