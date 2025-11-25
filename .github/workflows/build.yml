@@ -111,8 +111,8 @@ jobs:
         for dir in */; do
           cd "$dir"
 
-          # Get platform info from directory name
-          platform=$(echo "$dir" | sed 's/\///')
+          # Get platform info from directory name (remove trailing slash and mpm- prefix)
+          platform=$(echo "$dir" | sed 's/\///' | sed 's/^mpm-//')
 
           # Create appropriate archive based on platform
           if [[ "$platform" == *"windows"* ]]; then
