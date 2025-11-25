@@ -15,15 +15,17 @@ A CLI tool to manage Minecraft server plugins and mods using the Modrinth API. I
 
 #### Windows
 ```powershell
-powershell -c "irm https://raw.githubusercontent.com/storrealbac/mpm/main/scripts/install.ps1 | iex"
+powershell -c "irm https://storrealbac.github.io/mpm/install.ps1 | iex"
 ```
 
 #### Linux / macOS
 ```bash
-curl -fsSL https://raw.githubusercontent.com/storrealbac/mpm/main/scripts/install.sh | bash
+curl -fsSL https://storrealbac.github.io/mpm/install.sh | bash
 ```
 
 That's it! mpm will be installed and ready to use.
+
+For more information, visit [https://storrealbac.github.io/mpm](https://storrealbac.github.io/mpm)
 
 ### From Source
 
@@ -111,7 +113,7 @@ plugins:
 
 mpm uses Modrinth's API to download plugins and server jars. You can configure:
 
-- Server type (Vanilla, Spigot, Paper, Purpur, Fabric)
+- Server type (Paper, Purpur, Folia, Spigot, Bukkit, Sponge, Velocity, Waterfall)
 - Minecraft version
 - Plugin versions and dependencies
 
