@@ -6,6 +6,12 @@ Write-Host "mpm: Minecraft Plugin Manager Installer" -ForegroundColor DarkYellow
 # Create directory
 New-Item -ItemType Directory -Force -Path "$HOME\mpm" | Out-Null
 
+# Remove old version if exists
+if (Test-Path "$HOME\mpm\mpm.exe") {
+    Write-Host "Removing old version..." -ForegroundColor Yellow
+    Remove-Item "$HOME\mpm\mpm.exe" -Force
+}
+
 # Download
 Write-Host "Downloading mpm..." -ForegroundColor Yellow
 try {
