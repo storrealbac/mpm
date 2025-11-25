@@ -19,12 +19,21 @@ fi
 # Create directory
 mkdir -p ~/.local/bin
 
+# Remove old version if exists
+if [ -f ~/.local/bin/mpm ]; then
+  echo "Removing old version..."
+  rm -f ~/.local/bin/mpm
+fi
+
 # Download
 echo "Downloading mpm..."
 if ! curl -L "https://github.com/storrealbac/mpm/releases/latest/download/mpm-${os}-latest-${arch}.tar.gz" | tar -xz -C ~/.local/bin; then
   echo "Failed to download. Please check your internet connection."
   exit 1
 fi
+
+# Make executable
+chmod +x ~/.local/bin/mpm
 
 # Add to PATH
 if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
