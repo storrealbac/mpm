@@ -1,4 +1,4 @@
-package modrinth
+package sources
 
 import (
 	"encoding/json"
@@ -9,27 +9,27 @@ import (
 )
 
 const (
-	BaseURL = "https://api.modrinth.com/v2"
+	ModrinthBaseURL = "https://api.modrinth.com/v2"
 )
 
-type Client struct {
+type ModrinthClient struct {
 	httpClient *http.Client
 }
 
-func NewClient() *Client {
-	return &Client{
+func NewModrinthClient() *ModrinthClient {
+	return &ModrinthClient{
 		httpClient: &http.Client{},
 	}
 }
 
-type SearchResponse struct {
-	Hits      []Project `json:"hits"`
+type ModrinthSearchResponse struct {
+	Hits      []ModrinthProject `json:"hits"`
 	Offset    int       `json:"offset"`
 	Limit     int       `json:"limit"`
 	TotalHits int       `json:"total_hits"`
 }
 
-type Project struct {
+type ModrinthProject struct {
 	Slug        string   `json:"slug"`
 	Title       string   `json:"title"`
 	Description string   `json:"description"`
@@ -41,7 +41,7 @@ type Project struct {
 	Versions    []string `json:"versions"`
 }
 
-type Version struct {
+type ModrinthVersion struct {
 	ID            string   `json:"id"`
 	ProjectID     string   `json:"project_id"`
 	AuthorID      string   `json:"author_id"`
@@ -49,10 +49,10 @@ type Version struct {
 	VersionNumber string   `json:"version_number"`
 	GameVersions  []string `json:"game_versions"`
 	Loaders       []string `json:"loaders"`
-	Files         []File   `json:"files"`
+	Files         []ModrinthFile   `json:"files"`
 }
 
-type File struct {
+type ModrinthFile struct {
 	Hashes   map[string]string `json:"hashes"`
 	URL      string            `json:"url"`
 	Filename string            `json:"filename"`
@@ -63,13 +63,13 @@ type File struct {
 // SearchProjects busca proyectos en Modrinth
 // serverType: optional server platform to filter results (paper, folia, velocity, etc.)
 // strict: if true, only return plugins that exactly match the server type
-func (c *Client) SearchProjects(query string, serverType string, strict bool) ([]Project, error) {
+func (c *ModrinthClient) SearchProjects(query string, serverType string, strict bool) ([]ModrinthProject, error) {
 	// Build facets based on server type and strict mode
 	facets := buildSearchFacets(serverType, strict)
 
 	encodedQuery := url.QueryEscape(query)
 	encodedFacets := url.QueryEscape(facets)
-	url := fmt.Sprintf("%s/search?query=%s&facets=%s", BaseURL, encodedQuery, encodedFacets)
+	url := fmt.Sprintf("%s/search?query=%s&facets=%s", ModrinthBaseURL, encodedQuery, encodedFacets)
 
 	resp, err := c.httpClient.Get(url)
 	if err != nil {
@@ -81,7 +81,7 @@ func (c *Client) SearchProjects(query string, serverType string, strict bool) ([
 		return nil, fmt.Errorf("API error: %d", resp.StatusCode)
 	}
 
-	var searchResp SearchResponse
+	var searchResp ModrinthSearchResponse
 	if err := json.NewDecoder(resp.Body).Decode(&searchResp); err != nil {
 		return nil, err
 	}
@@ -159,7 +159,7 @@ func buildSearchFacets(serverType string, strict bool) string {
 }
 
 // IsPluginCompatible checks if a plugin's categories match the server type
-func IsPluginCompatible(project *Project, serverType string) (compatible bool, exactMatch bool) {
+func ModrinthIsPluginCompatible(project *ModrinthProject, serverType string) (compatible bool, exactMatch bool) {
 	if serverType == "" {
 		return true, true
 	}
@@ -256,8 +256,8 @@ func IsPluginCompatible(project *Project, serverType string) (compatible bool, e
 }
 
 // GetProjectVersions obtiene las versiones de un proyecto, opcionalmente filtrando por versión de juego
-func (c *Client) GetProjectVersions(idOrSlug string, gameVersion string) ([]Version, error) {
-	reqUrl := fmt.Sprintf("%s/project/%s/version", BaseURL, idOrSlug)
+func (c *ModrinthClient) GetProjectVersions(idOrSlug string, gameVersion string) ([]ModrinthVersion, error) {
+	reqUrl := fmt.Sprintf("%s/project/%s/version", ModrinthBaseURL, idOrSlug)
 	if gameVersion != "" {
 		// game_versions=["1.20.1"]
 		encodedVersion := fmt.Sprintf(`["%s"]`, gameVersion)
@@ -274,7 +274,7 @@ func (c *Client) GetProjectVersions(idOrSlug string, gameVersion string) ([]Vers
 		return nil, fmt.Errorf("API error: %d", resp.StatusCode)
 	}
 
-	var versions []Version
+	var versions []ModrinthVersion
 	if err := json.NewDecoder(resp.Body).Decode(&versions); err != nil {
 		return nil, err
 	}
@@ -286,7 +286,7 @@ func (c *Client) GetProjectVersions(idOrSlug string, gameVersion string) ([]Vers
 // DownloadFile downloads a file from a URL and returns a reader.
 // It now returns the body directly, the caller is responsible for wrapping it with a progress bar if needed,
 // OR we can handle it here. To keep it simple and reusable, let's return the size too.
-func (c *Client) DownloadFile(url string) (io.ReadCloser, int64, error) {
+func (c *ModrinthClient) DownloadFile(url string) (io.ReadCloser, int64, error) {
 	resp, err := c.httpClient.Get(url)
 	if err != nil {
 		return nil, 0, err

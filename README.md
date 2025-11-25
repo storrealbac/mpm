@@ -1,6 +1,6 @@
 # **mpm** - Minecraft Plugin Manager
 
-A CLI tool to manage Minecraft server plugins and mods using the Modrinth API. It allows you to install, update, and remove plugins, as well as manage the server jar itself.
+A CLI tool to manage Minecraft server plugins and mods using Modrinth and Hangar APIs. It allows you to install, update, and remove plugins, as well as manage the server jar itself.
 
 ## Features
 
@@ -53,8 +53,12 @@ This creates a `package.yml` file to manage your server configuration.
 ### Install plugins
 
 ```bash
-# Install a single plugin
+# Install a single plugin (searches both Modrinth and Hangar)
 mpm install <plugin-name>
+
+# Install from a specific source
+mpm install --source modrinth <plugin-name>
+mpm install --source hangar <plugin-name>
 
 # Install multiple plugins
 mpm install <plugin1> <plugin2> <plugin3>
@@ -97,25 +101,46 @@ mpm validate
 name: my-server
 version: "1.0"
 server:
-    type: purpur
+    type: paper
     minecraft_version: 1.20.4
     build: latest
 plugins:
-    - name: Fabric API
-      version: 0.97.3+1.20.4
-      modrinth_id: fabric-api
-    - name: Sodium
-      version: mc1.20.4-0.5.8
-      modrinth_id: sodium
+    # Modrinth plugins
+    - name: Vault
+      version: latest
+      modrinth_id: vault
+    # Hangar plugins (use owner/slug format)
+    - name: Geyser
+      version: latest
+      hangar_id: GeyserMC/Geyser-Spigot
+    - name: ViaVersion
+      version: latest
+      hangar_id: ViaVersion/ViaVersion
 ```
 
 ## Configuration
 
-mpm uses Modrinth's API to download plugins and server jars. You can configure:
+mpm uses Modrinth and Hangar APIs to download plugins and server jars. You can configure:
 
 - Server type (Paper, Purpur, Folia, Spigot, Bukkit, Sponge, Velocity, Waterfall)
 - Minecraft version
 - Plugin versions and dependencies
+- Plugin sources (Modrinth or Hangar)
+
+### Plugin Sources
+
+mpm supports two plugin repositories:
+
+- **Modrinth**: General-purpose mod and plugin repository
+  - Use `modrinth_id` field in package.yml
+  - Example: `modrinth_id: vault`
+
+- **Hangar**: PaperMC's official plugin repository
+  - Use `hangar_id` field in package.yml with format `owner/slug`
+  - Example: `hangar_id: GeyserMC/Geyser-Spigot`
+  - Specifically optimized for Paper ecosystem plugins
+
+When using `mpm install <plugin-name>`, the tool will automatically search both repositories unless you specify `--source` flag.
 
 ## Development
 
