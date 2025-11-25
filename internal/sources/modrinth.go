@@ -255,6 +255,28 @@ func ModrinthIsPluginCompatible(project *ModrinthProject, serverType string) (co
 	return false, false
 }
 
+// GetProject retrieves project information by ID or slug
+func (c *ModrinthClient) GetProject(idOrSlug string) (*ModrinthProject, error) {
+	reqUrl := fmt.Sprintf("%s/project/%s", ModrinthBaseURL, idOrSlug)
+
+	resp, err := c.httpClient.Get(reqUrl)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API error: %d", resp.StatusCode)
+	}
+
+	var project ModrinthProject
+	if err := json.NewDecoder(resp.Body).Decode(&project); err != nil {
+		return nil, err
+	}
+
+	return &project, nil
+}
+
 // GetProjectVersions obtiene las versiones de un proyecto, opcionalmente filtrando por versión de juego
 func (c *ModrinthClient) GetProjectVersions(idOrSlug string, gameVersion string) ([]ModrinthVersion, error) {
 	reqUrl := fmt.Sprintf("%s/project/%s/version", ModrinthBaseURL, idOrSlug)

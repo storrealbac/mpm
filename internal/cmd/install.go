@@ -247,6 +247,12 @@ func installSpecificPlugins(modrinthClient *sources.ModrinthClient, hangarClient
 }
 
 func installFromModrinth(client *sources.ModrinthClient, pluginID, serverVersion, serverType string, pkg *models.Package, lockFile *models.PackageLock) error {
+	// Get project info first to get the correct name
+	project, err := client.GetProject(pluginID)
+	if err != nil {
+		return fmt.Errorf("error getting project: %v", err)
+	}
+
 	// Get versions
 	versions, err := client.GetProjectVersions(pluginID, serverVersion)
 	if err != nil {
@@ -254,7 +260,21 @@ func installFromModrinth(client *sources.ModrinthClient, pluginID, serverVersion
 	}
 
 	if len(versions) == 0 {
-		return fmt.Errorf("no versions found")
+		ui.PrintWarning("No compatible versions found for platform '%s'", serverType)
+
+		// Try to find versions from alternative platforms
+		alternativeVersions := findAlternativeModrinthVersions(client, pluginID, serverVersion, serverType)
+		if len(alternativeVersions) == 0 {
+			return fmt.Errorf("no versions found for any platform")
+		}
+
+		// Let user choose from alternatives
+		selectedVersion := promptAlternativeVersionSelection(alternativeVersions)
+		if selectedVersion == nil {
+			return fmt.Errorf("installation cancelled by user")
+		}
+
+		versions = []sources.ModrinthVersion{*selectedVersion}
 	}
 
 	// Take latest version
@@ -283,7 +303,7 @@ func installFromModrinth(client *sources.ModrinthClient, pluginID, serverVersion
 
 	// Add to package.yml
 	newPlugin := models.Plugin{
-		Name:       latestVersion.Name,
+		Name:       project.Title,
 		Version:    latestVersion.VersionNumber,
 		ModrinthID: pluginID,
 	}
@@ -333,7 +353,22 @@ func installFromHangar(client *sources.HangarClient, pluginID, serverVersion, se
 	}
 
 	if len(versions) == 0 {
-		return fmt.Errorf("no versions found")
+		ui.PrintWarning("No compatible versions found for platform '%s'", serverType)
+
+		// Try to find versions from alternative platforms
+		alternativeVersions := findAlternativeHangarVersions(client, owner, slug, serverVersion, serverType, project.SupportedPlatforms)
+		if len(alternativeVersions) == 0 {
+			return fmt.Errorf("no versions found for any platform")
+		}
+
+		// Let user choose from alternatives
+		selectedVersion := promptAlternativeHangarVersionSelection(alternativeVersions)
+		if selectedVersion == nil {
+			return fmt.Errorf("installation cancelled by user")
+		}
+
+		versions = []sources.HangarVersion{selectedVersion.version}
+		serverType = selectedVersion.platform // Update serverType to match the selected platform
 	}
 
 	// Take latest version
@@ -429,20 +464,17 @@ func installFromPackage(modrinthClient *sources.ModrinthClient, hangarClient *so
 			}
 
 			if len(versions) == 0 {
-				if serverVersion != "" {
-					ui.PrintWarning("No versions found compatible with Minecraft %s for %s.", serverVersion, plugin.Name)
-					ui.PrintInfo("Searching for any available version...")
+				ui.PrintWarning("No compatible versions found for platform '%s'", serverType)
 
-					allVersions, err := modrinthClient.GetProjectVersions(plugin.ModrinthID, "")
-					if err == nil && len(allVersions) > 0 {
-						versions = allVersions
-						ui.PrintWarning("Installing latest available version (%s). It might not be compatible!", versions[0].VersionNumber)
-					} else {
-						ui.PrintError("No versions available for %s", plugin.Name)
-						continue
-					}
+				// Try to find versions from alternative platforms
+				alternativeVersions := findAlternativeModrinthVersions(modrinthClient, plugin.ModrinthID, serverVersion, serverType)
+				if len(alternativeVersions) > 0 {
+					// For batch install, automatically select the first alternative
+					selectedAlt := alternativeVersions[0]
+					ui.PrintInfo("Using version %s from platform %s for %s", selectedAlt.version.VersionNumber, strings.ToUpper(selectedAlt.platform), plugin.Name)
+					versions = []sources.ModrinthVersion{selectedAlt.version}
 				} else {
-					ui.PrintError("No versions available for %s", plugin.Name)
+					ui.PrintError("No versions available for %s on any platform", plugin.Name)
 					continue
 				}
 			}
@@ -508,20 +540,25 @@ func installFromPackage(modrinthClient *sources.ModrinthClient, hangarClient *so
 			}
 
 			if len(versions) == 0 {
-				if serverVersion != "" {
-					ui.PrintWarning("No versions found compatible with Minecraft %s for %s.", serverVersion, plugin.Name)
-					ui.PrintInfo("Searching for any available version...")
+				ui.PrintWarning("No compatible versions found for platform '%s'", serverType)
 
-					allVersions, err := hangarClient.GetProjectVersions(owner, slug, "", serverType)
-					if err == nil && len(allVersions) > 0 {
-						versions = allVersions
-						ui.PrintWarning("Installing latest available version (%s). It might not be compatible!", versions[0].Name)
-					} else {
-						ui.PrintError("No versions available for %s", plugin.Name)
-						continue
-					}
+				// Get project to access supported platforms
+				project, err := hangarClient.GetProject(owner, slug)
+				if err != nil {
+					ui.PrintError("Error getting project info for %s: %v", plugin.Name, err)
+					continue
+				}
+
+				// Try to find versions from alternative platforms
+				alternativeVersions := findAlternativeHangarVersions(hangarClient, owner, slug, serverVersion, serverType, project.SupportedPlatforms)
+				if len(alternativeVersions) > 0 {
+					// For batch install, automatically select the first alternative
+					selectedAlt := alternativeVersions[0]
+					ui.PrintInfo("Using version %s from platform %s for %s", selectedAlt.version.Name, strings.ToUpper(selectedAlt.platform), plugin.Name)
+					versions = []sources.HangarVersion{selectedAlt.version}
+					serverType = selectedAlt.platform // Update serverType for this plugin
 				} else {
-					ui.PrintError("No versions available for %s", plugin.Name)
+					ui.PrintError("No versions available for %s on any platform", plugin.Name)
 					continue
 				}
 			}
@@ -876,4 +913,226 @@ func (w *MultiBarWriter) Write(p []byte) (int, error) {
 	w.Written += uint64(n)
 	ui.UpdateBar(w.BarID, w.Written)
 	return n, nil
+}
+
+// alternativeVersionInfo holds information about an alternative platform version
+type alternativeVersionInfo struct {
+	version  sources.ModrinthVersion
+	platform string
+}
+
+// findAlternativeModrinthVersions searches for versions from alternative platforms
+func findAlternativeModrinthVersions(client *sources.ModrinthClient, pluginID, serverVersion, currentPlatform string) []alternativeVersionInfo {
+	alternatives := []alternativeVersionInfo{}
+
+	// Define platform search order based on current platform
+	var platformsToTry []string
+	switch strings.ToLower(currentPlatform) {
+	case "paper", "purpur", "folia":
+		platformsToTry = []string{"paper", "spigot", "bukkit", "purpur", "folia"}
+	case "spigot":
+		platformsToTry = []string{"spigot", "bukkit", "paper"}
+	case "bukkit":
+		platformsToTry = []string{"bukkit", "spigot", "paper"}
+	case "velocity":
+		platformsToTry = []string{"velocity"}
+	case "waterfall":
+		platformsToTry = []string{"bungeecord"}
+	case "sponge":
+		platformsToTry = []string{"sponge"}
+	default:
+		platformsToTry = []string{"paper", "spigot", "bukkit", "velocity", "bungeecord", "sponge"}
+	}
+
+	// Try each platform
+	for _, platform := range platformsToTry {
+		if strings.ToLower(platform) == strings.ToLower(currentPlatform) {
+			continue // Skip current platform as we already checked it
+		}
+
+		// Get versions without filtering by game version first
+		allVersions, err := client.GetProjectVersions(pluginID, "")
+		if err != nil {
+			continue
+		}
+
+		// Filter versions by platform manually
+		for _, version := range allVersions {
+			// Check if version supports this platform
+			hasCompatibleLoader := false
+			for _, loader := range version.Loaders {
+				if strings.EqualFold(loader, platform) {
+					hasCompatibleLoader = true
+					break
+				}
+			}
+
+			if !hasCompatibleLoader {
+				continue
+			}
+
+			// Check if version supports the server version (if specified)
+			if serverVersion != "" {
+				hasGameVersion := false
+				for _, gv := range version.GameVersions {
+					if gv == serverVersion {
+						hasGameVersion = true
+						break
+					}
+				}
+				if !hasGameVersion {
+					continue
+				}
+			}
+
+			alternatives = append(alternatives, alternativeVersionInfo{
+				version:  version,
+				platform: platform,
+			})
+		}
+
+		// If we found alternatives, stop searching
+		if len(alternatives) > 0 {
+			break
+		}
+	}
+
+	return alternatives
+}
+
+// promptAlternativeVersionSelection shows alternatives and lets user choose
+func promptAlternativeVersionSelection(alternatives []alternativeVersionInfo) *sources.ModrinthVersion {
+	ui.PrintInfo("Found versions from alternative platforms:")
+	fmt.Println()
+
+	// Group by platform and show max 3 per platform
+	platformGroups := make(map[string][]alternativeVersionInfo)
+	for _, alt := range alternatives {
+		platformGroups[alt.platform] = append(platformGroups[alt.platform], alt)
+	}
+
+	options := []alternativeVersionInfo{}
+	idx := 1
+	for platform, versions := range platformGroups {
+		fmt.Printf("  Platform: %s\n", strings.ToUpper(platform))
+		limit := len(versions)
+		if limit > 3 {
+			limit = 3
+		}
+		for i := 0; i < limit; i++ {
+			v := versions[i]
+			fmt.Printf("    %d. %s (v%s) - Game versions: %s\n", idx, v.version.Name, v.version.VersionNumber, strings.Join(v.version.GameVersions, ", "))
+			options = append(options, v)
+			idx++
+		}
+		fmt.Println()
+	}
+
+	fmt.Printf("Select a version (1-%d) or press Enter to cancel: ", len(options))
+	reader := bufio.NewReader(os.Stdin)
+	input, _ := reader.ReadString('\n')
+	input = strings.TrimSpace(input)
+
+	var choice int
+	if _, err := fmt.Sscanf(input, "%d", &choice); err == nil && choice >= 1 && choice <= len(options) {
+		selected := options[choice-1]
+		ui.PrintSuccess("Selected: %s from platform %s", selected.version.Name, strings.ToUpper(selected.platform))
+		return &selected.version
+	}
+
+	return nil
+}
+
+// hangarAlternativeVersionInfo holds information about an alternative Hangar platform version
+type hangarAlternativeVersionInfo struct {
+	version  sources.HangarVersion
+	platform string
+}
+
+// findAlternativeHangarVersions searches for versions from alternative Hangar platforms
+func findAlternativeHangarVersions(client *sources.HangarClient, owner, slug, serverVersion, currentPlatform string, supportedPlatforms map[string][]string) []hangarAlternativeVersionInfo {
+	alternatives := []hangarAlternativeVersionInfo{}
+
+	// Get available platforms from supportedPlatforms
+	availablePlatforms := []string{}
+	for platform := range supportedPlatforms {
+		if !strings.EqualFold(platform, currentPlatform) {
+			availablePlatforms = append(availablePlatforms, strings.ToLower(platform))
+		}
+	}
+
+	if len(availablePlatforms) == 0 {
+		return alternatives
+	}
+
+	ui.PrintInfo("Searching in alternative platforms: %s", strings.Join(availablePlatforms, ", "))
+
+	// Try each available platform
+	for _, platform := range availablePlatforms {
+		versions, err := client.GetProjectVersions(owner, slug, serverVersion, platform)
+		if err != nil {
+			continue
+		}
+
+		for _, version := range versions {
+			alternatives = append(alternatives, hangarAlternativeVersionInfo{
+				version:  version,
+				platform: platform,
+			})
+		}
+
+		// If we found alternatives, stop searching
+		if len(alternatives) > 0 {
+			break
+		}
+	}
+
+	return alternatives
+}
+
+// promptAlternativeHangarVersionSelection shows Hangar alternatives and lets user choose
+func promptAlternativeHangarVersionSelection(alternatives []hangarAlternativeVersionInfo) *hangarAlternativeVersionInfo {
+	ui.PrintInfo("Found versions from alternative platforms:")
+	fmt.Println()
+
+	// Group by platform and show max 3 per platform
+	platformGroups := make(map[string][]hangarAlternativeVersionInfo)
+	for _, alt := range alternatives {
+		platformGroups[alt.platform] = append(platformGroups[alt.platform], alt)
+	}
+
+	options := []hangarAlternativeVersionInfo{}
+	idx := 1
+	for platform, versions := range platformGroups {
+		fmt.Printf("  Platform: %s\n", strings.ToUpper(platform))
+		limit := len(versions)
+		if limit > 3 {
+			limit = 3
+		}
+		for i := 0; i < limit; i++ {
+			v := versions[i]
+			gameVersions := []string{}
+			if deps, ok := v.version.PlatformDependencies[strings.ToUpper(platform)]; ok {
+				gameVersions = deps
+			}
+			fmt.Printf("    %d. %s - Game versions: %s\n", idx, v.version.Name, strings.Join(gameVersions, ", "))
+			options = append(options, v)
+			idx++
+		}
+		fmt.Println()
+	}
+
+	fmt.Printf("Select a version (1-%d) or press Enter to cancel: ", len(options))
+	reader := bufio.NewReader(os.Stdin)
+	input, _ := reader.ReadString('\n')
+	input = strings.TrimSpace(input)
+
+	var choice int
+	if _, err := fmt.Sscanf(input, "%d", &choice); err == nil && choice >= 1 && choice <= len(options) {
+		selected := options[choice-1]
+		ui.PrintSuccess("Selected: %s from platform %s", selected.version.Name, strings.ToUpper(selected.platform))
+		return &selected
+	}
+
+	return nil
 }
