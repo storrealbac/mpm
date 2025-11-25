@@ -61,11 +61,12 @@ type File struct {
 }
 
 // SearchProjects busca proyectos en Modrinth
-func (c *Client) SearchProjects(query string) ([]Project, error) {
-	// Facets para filtrar por categorías de servidor (Bukkit, Spigot, Paper, etc.)
-	// Documentación: https://docs.modrinth.com/api/operations/searchprojects/
-	// Usamos OR logic para incluir cualquiera de estas categorías.
-	facets := `[["categories:bukkit", "categories:folia", "categories:paper", "categories:purpur", "categories:spigot", "categories:sponge"]]`
+// serverType: optional server platform to filter results (paper, folia, velocity, etc.)
+// strict: if true, only return plugins that exactly match the server type
+func (c *Client) SearchProjects(query string, serverType string, strict bool) ([]Project, error) {
+	// Build facets based on server type and strict mode
+	facets := buildSearchFacets(serverType, strict)
+
 	encodedQuery := url.QueryEscape(query)
 	encodedFacets := url.QueryEscape(facets)
 	url := fmt.Sprintf("%s/search?query=%s&facets=%s", BaseURL, encodedQuery, encodedFacets)
@@ -86,6 +87,172 @@ func (c *Client) SearchProjects(query string) ([]Project, error) {
 	}
 
 	return searchResp.Hits, nil
+}
+
+// buildSearchFacets creates Modrinth API facets based on server type
+func buildSearchFacets(serverType string, strict bool) string {
+	// Map server types to appropriate Modrinth categories
+	// Reference: https://docs.modrinth.com/api/operations/searchprojects/
+
+	switch serverType {
+	case "velocity":
+		if strict {
+			return `[["categories:velocity"]]`
+		}
+		// Velocity proxies can only use velocity plugins
+		return `[["categories:velocity"]]`
+
+	case "waterfall":
+		if strict {
+			return `[["categories:bungeecord"]]`
+		}
+		// Waterfall is BungeeCord compatible
+		return `[["categories:bungeecord"]]`
+
+	case "folia":
+		if strict {
+			// Only Folia-specific plugins
+			return `[["categories:folia"]]`
+		}
+		// Fallback: Folia plugins or general Bukkit API plugins (with warning)
+		return `[["categories:folia", "categories:paper", "categories:purpur", "categories:spigot", "categories:bukkit"]]`
+
+	case "paper":
+		if strict {
+			return `[["categories:paper"]]`
+		}
+		// Paper is compatible with Paper, Spigot, and Bukkit plugins
+		return `[["categories:paper", "categories:spigot", "categories:bukkit"]]`
+
+	case "purpur":
+		if strict {
+			return `[["categories:purpur"]]`
+		}
+		// Purpur is Paper fork, compatible with Paper, Spigot, and Bukkit
+		return `[["categories:purpur", "categories:paper", "categories:spigot", "categories:bukkit"]]`
+
+	case "spigot":
+		if strict {
+			return `[["categories:spigot"]]`
+		}
+		// Spigot is compatible with Spigot and Bukkit plugins
+		return `[["categories:spigot", "categories:bukkit"]]`
+
+	case "bukkit":
+		if strict {
+			return `[["categories:bukkit"]]`
+		}
+		// Bukkit is the base API
+		return `[["categories:bukkit"]]`
+
+	case "sponge":
+		if strict {
+			return `[["categories:sponge"]]`
+		}
+		// Sponge has its own plugin API, not compatible with others
+		return `[["categories:sponge"]]`
+
+	default:
+		// If no server type specified, include all server-side plugins
+		return `[["categories:bukkit", "categories:folia", "categories:paper", "categories:purpur", "categories:spigot", "categories:sponge", "categories:velocity", "categories:bungeecord"]]`
+	}
+}
+
+// IsPluginCompatible checks if a plugin's categories match the server type
+func IsPluginCompatible(project *Project, serverType string) (compatible bool, exactMatch bool) {
+	if serverType == "" {
+		return true, true
+	}
+
+	categories := project.Categories
+
+	// Check for exact category match
+	for _, cat := range categories {
+		if cat == serverType {
+			return true, true
+		}
+	}
+
+	// Check compatibility based on server type
+	switch serverType {
+	case "folia":
+		// Folia needs explicit Folia support
+		// Paper/Spigot/Bukkit plugins may not work due to threading changes
+		for _, cat := range categories {
+			if cat == "folia" {
+				return true, true
+			}
+		}
+		// Other categories are not compatible
+		return false, false
+
+	case "paper":
+		// Paper is compatible with Paper, Spigot, and Bukkit
+		for _, cat := range categories {
+			if cat == "paper" {
+				return true, true
+			}
+			if cat == "spigot" || cat == "bukkit" {
+				return true, false
+			}
+		}
+
+	case "purpur":
+		// Purpur is Paper fork
+		for _, cat := range categories {
+			if cat == "purpur" {
+				return true, true
+			}
+			if cat == "paper" || cat == "spigot" || cat == "bukkit" {
+				return true, false
+			}
+		}
+
+	case "spigot":
+		// Spigot is compatible with Spigot and Bukkit
+		for _, cat := range categories {
+			if cat == "spigot" {
+				return true, true
+			}
+			if cat == "bukkit" {
+				return true, false
+			}
+		}
+
+	case "bukkit":
+		// Bukkit is the base
+		for _, cat := range categories {
+			if cat == "bukkit" {
+				return true, true
+			}
+		}
+
+	case "velocity":
+		// Velocity plugins only
+		for _, cat := range categories {
+			if cat == "velocity" {
+				return true, true
+			}
+		}
+
+	case "waterfall":
+		// Waterfall is BungeeCord compatible
+		for _, cat := range categories {
+			if cat == "bungeecord" {
+				return true, true
+			}
+		}
+
+	case "sponge":
+		// Sponge plugins only
+		for _, cat := range categories {
+			if cat == "sponge" {
+				return true, true
+			}
+		}
+	}
+
+	return false, false
 }
 
 // GetProjectVersions obtiene las versiones de un proyecto, opcionalmente filtrando por versión de juego
