@@ -4,17 +4,14 @@ set -e
 
 echo -e "\033[0;33mmpm: Minecraft Plugin Manager Installer\033[0m"
 
-# Detect OS
-os=$(uname -s | tr '[:upper:]' '[:lower:]')
+# Detect OS and arch
 arch=$(uname -m | tr '[:upper:]' '[:lower:]')
 case $arch in
   x86_64) arch="amd64" ;;
   aarch64|arm64) arch="arm64" ;;
 esac
-# macOS uses Linux binaries
-if [[ "$os" == "darwin" ]]; then
-  os="linux"
-fi
+# Use ubuntu-latest for release asset naming (matches GitHub Actions runner name)
+os="ubuntu-latest"
 
 # Create directory
 mkdir -p ~/.local/bin

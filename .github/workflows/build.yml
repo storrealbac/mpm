@@ -113,6 +113,8 @@ jobs:
 
           # Get platform info from directory name (remove trailing slash and mpm- prefix)
           platform=$(echo "$dir" | sed 's/\///' | sed 's/^mpm-//')
+          # Normalize OS names: ubuntu-latest -> linux-latest
+          platform=$(echo "$platform" | sed 's/ubuntu-latest/linux-latest/')
 
           # Create appropriate archive based on platform
           if [[ "$platform" == *"windows"* ]]; then
