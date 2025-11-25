@@ -10,8 +10,8 @@ case $arch in
   x86_64) arch="amd64" ;;
   aarch64|arm64) arch="arm64" ;;
 esac
-# Use ubuntu-latest for release asset naming (matches GitHub Actions runner name)
-os="ubuntu-latest"
+# Use linux for release asset naming (matches GitHub Actions artifact renaming)
+os="linux"
 
 # Create directory
 mkdir -p ~/.local/bin
