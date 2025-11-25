@@ -48,16 +48,37 @@ yarn-debug.log*
 yarn-error.log*
 
 # Minecraft server files
-server.jar
+*.jar
+!mpm*.jar
 server.properties
 eula.txt
+ops.json
+whitelist.json
+banned-players.json
+banned-ips.json
+usercache.json
+version_history.json
+help.yml
 logs/
 crash-reports/
 plugins/
 world/
 world_nether/
 world_the_end/
+world_the_nether/
 config/
+cache/
+libraries/
+versions/
+backups/
+.fabric/
+.paper-remapped/
+paper-global.yml
+paper-world-defaults.yml
+spigot.yml
+bukkit.yml
+commands.yml
+permissions.yml
 
 # Cache directories
 .cache/

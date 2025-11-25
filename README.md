@@ -6,6 +6,9 @@ A CLI tool to manage Minecraft server plugins and mods using Modrinth and Hangar
 
 - **Plugin Management**: Install, update, and remove Minecraft server plugins
 - **Server Management**: Download and manage Minecraft server jars
+- **Server Startup**: Start the server with custom commands and automatic configuration
+- **Custom Scripts**: Define and run custom scripts (like npm scripts)
+- **Startup Commands**: Automatically execute console commands when server starts
 - **List Installed**: View all installed plugins and their versions
 - **Validate**: Check for plugin updates and compatibility
 
@@ -95,6 +98,26 @@ mpm list
 mpm validate
 ```
 
+### Run custom scripts
+
+```bash
+# Run a script defined in package.yml
+mpm run <script-name>
+
+# Examples
+mpm run backup
+mpm run clean
+```
+
+### Start the server
+
+```bash
+# Start the Minecraft server with configured settings
+mpm serve
+```
+
+The server will start using the command in `server.start_command` (or a default command), and will automatically execute any `startup_commands` after the server starts.
+
 ### Example package.yml
 
 ```yaml
@@ -104,6 +127,15 @@ server:
     type: paper
     minecraft_version: 1.20.4
     build: latest
+    start_command: "java -Xms4G -Xmx8G -jar server.jar nogui"
+scripts:
+    backup: "tar -czf backups/backup-$(date +%Y%m%d-%H%M%S).tar.gz world world_nether world_the_end"
+    clean: "rm -rf logs/*.log"
+    restart: "mpm serve"
+startup_commands:
+    - "gamerule doMobSpawning true"
+    - "difficulty normal"
+    - "say Server started successfully!"
 plugins:
     # Modrinth plugins
     - name: Vault
@@ -124,8 +156,36 @@ mpm uses Modrinth and Hangar APIs to download plugins and server jars. You can c
 
 - Server type (Paper, Purpur, Folia, Spigot, Bukkit, Sponge, Velocity, Waterfall)
 - Minecraft version
+- Custom server start command
 - Plugin versions and dependencies
 - Plugin sources (Modrinth or Hangar)
+- Custom scripts (like npm scripts)
+- Startup commands that run when the server starts
+
+### Custom Scripts
+
+Similar to npm scripts, you can define custom commands in the `scripts` section of package.yml:
+
+```yaml
+scripts:
+    backup: "tar -czf backups/backup-$(date +%Y%m%d-%H%M%S).tar.gz world"
+    clean: "rm -rf logs/*.log"
+    build: "./gradlew build"
+```
+
+Run them with: `mpm run <script-name>`
+
+### Server Configuration
+
+Configure how your server starts:
+
+- **`start_command`**: Custom Java command to start the server
+  - If not specified, uses default: `java -Xms2G -Xmx4G -jar server.jar nogui`
+  - Customize memory, JVM flags, etc.
+
+- **`startup_commands`**: List of console commands to run after server starts
+  - Executed in order, 1 second apart
+  - Useful for setting game rules, difficulty, sending messages, etc.
 
 ### Plugin Sources
 
